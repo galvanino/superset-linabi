@@ -1,0 +1,38 @@
+# Imagen base: la misma que usas hoy en docker-compose-image-tag.yml
+FROM apachesuperset.docker.scarf.sh/apache/superset:5.0.0
+
+# Necesitamos permisos para escribir en /app
+USER root
+
+
+# Dependencias del cliente Oracle
+RUN apt-get update && \
+    apt-get install -y libaio1 libnsl2 unzip && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copiamos el ZIP del Instant Client al contenedor
+COPY oracle/instantclient-basic-linux.x64-19.29.0.0.0dbru.zip /opt/oracle/
+
+# Descomprimir y limpiar
+RUN cd /opt/oracle && \
+    unzip instantclient-basic-linux.x64-19.29.0.0.0dbru.zip && \
+    rm instantclient-basic-linux.x64-19.29.0.0.0dbru.zip && \
+    ln -s instantclient_19_29 instantclient
+
+# Variables de entorno Oracle
+ENV ORACLE_HOME=/opt/oracle/instantclient
+ENV LD_LIBRARY_PATH=${ORACLE_HOME}
+ENV PATH=${ORACLE_HOME}:/app/.venv/bin:${PATH}
+
+# Instalar cx_Oracle en el virtualenv de Superset
+# RUN /app/.venv/bin/uv pip install cx-Oracle==8.3.0
+
+
+# --- Branding ---
+# Copiamos los archivos de branding a la carpeta de estáticos de Superset
+COPY branding/customer_logo.png /app/superset/static/assets/images/customer_logo.png
+COPY branding/favicon-32x32.png /app/superset/static/assets/images/favicon-32x32.png
+COPY branding/lina_logo.png /app/superset/static/assets/images/lina_logo.png
+
+# Volvemos al usuario normal de Superset
+USER superset
