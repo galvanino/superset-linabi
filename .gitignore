@@ -88,6 +88,8 @@ packages/*/package-lock.json
 .ipynb_checkpoints/
 scripts/*.zip
 
+# Ignore db connection libraries
+oracle/
 # IntelliJ
 *.iml
 venv

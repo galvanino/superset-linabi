@@ -1,0 +1,119 @@
+# Docker Compose file for LinaBI powered by Apache Superset with custom branding
+
+x-superset-volumes: &superset-volumes
+  - ./docker:/app/docker
+  - superset_home:/app/superset_home
+  - ./branding/customer_logo.png:/app/superset/static/assets/images/customer_logo.png
+  - ./branding/favicon-32x32.png:/app/superset/static/assets/images/favicon-32x32.png
+  - ./branding/lina_logo.png:/app/superset/static/assets/images/lina_logo.png
+  - ./docker/pythonpath_dev:/app/pythonpath_docker    # <-- Importante: carga config de branding
+
+services:
+
+  # ------------------------------
+  # Database (Postgres)
+  # ------------------------------
+  superset-db:
+    image: postgres:15
+    container_name: superset-db
+    restart: unless-stopped
+  env_file:
+    - ./docker/.env
+    - ./docker/.env-local
+  volumes:
+    - superset_db:/var/lib/postgresql/data
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U superset"]
+    interval: 5s
+    retries: 5
+
+  # ------------------------------
+  # Redis (Cache / async tasks)
+  # ------------------------------
+  superset-cache:
+    image: redis:7
+    container_name: superset-cache
+    restart: unless-stopped
+    volumes:
+      - superset_redis:/data
+
+  # ------------------------------
+  # Superset App (Gunicorn)
+  # ------------------------------
+  superset-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.linabi
+    image: linabi-superset:5.0.0
+    container_name: superset-app
+    command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
+    restart: unless-stopped
+    env_file:
+      - ./docker/.env
+      - ./docker/.env-local
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+    volumes: *superset-volumes
+    ports:
+      - "8088:8088"   # Reverse proxy usará este puerto interno
+    environment:
+      SUPERSET_LOG_LEVEL: "${SUPERSET_LOG_LEVEL:-info}"
+  # ------------------------------
+  # Celery Worker
+  # ------------------------------
+  superset-worker:
+    image: linabi-superset:5.0.0
+    container_name: superset-worker
+    command: ["/app/docker/docker-bootstrap.sh", "worker"]
+    restart: unless-stopped
+    env_file:
+      - ./docker/.env
+      - ./docker/.env-local
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+    volumes: *superset-volumes
+    environment:
+      SUPERSET_LOG_LEVEL: "${SUPERSET_LOG_LEVEL:-info}"
+
+  # ------------------------------
+  # Celery Beat
+  # ------------------------------
+  superset-worker-beat:
+    image: linabi-superset:5.0.0
+    container_name: superset-worker-beat
+    restart: unless-stopped
+    env_file:
+      - ./docker/.env
+      - ./docker/.env-local
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+    volumes: *superset-volumes
+    environment:
+      SUPERSET_LOG_LEVEL: "${SUPERSET_LOG_LEVEL:-info}"
+
+  # ------------------------------
+  # Init (db upgrade, create-admin, init)
+  # ------------------------------
+  superset-init:
+    image: linabi-superset:5.0.0
+    container_name: superset-init
+    command: ["/app/docker/docker-init.sh"]
+    depends_on:
+      - superset-db
+      - superset-cache
+    env_file:
+      superset-db:
+        condition: service_started
+      superset-cache:
+        condition: service_started
+    volumes: *superset-volumes
+    environment:
+      SUPERSET_LOG_LEVEL: "${SUPERSET_LOG_LEVEL:-info}"
+
+volumes:
+  superset_home:
+  superset_db:
+  superset_redis:
