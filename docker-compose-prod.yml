@@ -17,15 +17,15 @@ services:
     image: postgres:15
     container_name: superset-db
     restart: unless-stopped
-  env_file:
-    - ./docker/.env
-    - ./docker/.env-local
-  volumes:
-    - superset_db:/var/lib/postgresql/data
-  healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U superset"]
-    interval: 5s
-    retries: 5
+    env_file:
+      - ./docker/.env
+      - ./docker/.env-local
+    volumes:
+      - superset_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superset"]
+      interval: 5s
+      retries: 5
 
   # ------------------------------
   # Redis (Cache / async tasks)
@@ -98,10 +98,10 @@ services:
     image: galvanino/linabi-superset:5.0.0
     container_name: superset-init
     command: ["/app/docker/docker-init.sh"]
-    depends_on:
-      - superset-db
-      - superset-cache
     env_file:
+      - ./docker/.env
+      - ./docker/.env-local
+    depends_on:
       superset-db:
         condition: service_started
       superset-cache:

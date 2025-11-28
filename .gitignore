@@ -30,6 +30,7 @@ cover
 .DS_Store
 .eggs
 .env
+.env-local
 .envrc
 .idea
 .mypy_cache
