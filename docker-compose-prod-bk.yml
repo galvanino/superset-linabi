@@ -41,7 +41,10 @@ services:
   # Superset App (Gunicorn)
   # ------------------------------
   superset-app:
-    image: galvanino/linabi-superset:5.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile.linabi
+    image: linabi-superset:5.0.0
     container_name: superset-app
     command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
     restart: unless-stopped
@@ -60,7 +63,7 @@ services:
   # Celery Worker
   # ------------------------------
   superset-worker:
-    image: galvanino/linabi-superset:5.0.0
+    image: linabi-superset:5.0.0
     container_name: superset-worker
     command: ["/app/docker/docker-bootstrap.sh", "worker"]
     restart: unless-stopped
@@ -78,7 +81,7 @@ services:
   # Celery Beat
   # ------------------------------
   superset-worker-beat:
-    image: galvanino/linabi-superset:5.0.0
+    image: linabi-superset:5.0.0
     container_name: superset-worker-beat
     restart: unless-stopped
     env_file:
@@ -95,7 +98,7 @@ services:
   # Init (db upgrade, create-admin, init)
   # ------------------------------
   superset-init:
-    image: galvanino/linabi-superset:5.0.0
+    image: linabi-superset:5.0.0
     container_name: superset-init
     command: ["/app/docker/docker-init.sh"]
     depends_on:
