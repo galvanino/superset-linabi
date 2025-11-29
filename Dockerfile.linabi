@@ -1,5 +1,5 @@
 # Imagen base: la misma que usas hoy en docker-compose-image-tag.yml
-FROM apachesuperset.docker.scarf.sh/apache/superset:5.0.0
+FROM apachesuperset.docker.scarf.sh/apache/superset:latest-dev
 
 # Necesitamos permisos para escribir en /app
 USER root
