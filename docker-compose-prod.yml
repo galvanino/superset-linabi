@@ -102,10 +102,10 @@ services:
     image: linabi-superset:5.0.0
     container_name: superset-init
     command: ["/app/docker/docker-init.sh"]
-    depends_on:
-      - superset-db
-      - superset-cache
     env_file:
+      - ./docker/.env
+      - ./docker/.env-local
+    depends_on:
       superset-db:
         condition: service_started
       superset-cache:
