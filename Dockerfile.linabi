@@ -26,6 +26,7 @@ ENV PATH=${ORACLE_HOME}:/app/.venv/bin:${PATH}
 
 # Instalar cx_Oracle en el virtualenv de Superset
 # RUN /app/.venv/bin/uv pip install cx-Oracle==8.3.0
+# Se hace por medio de ./docker/requirements-local.txt
 
 
 # --- Branding ---

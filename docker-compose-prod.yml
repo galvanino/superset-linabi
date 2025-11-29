@@ -17,15 +17,15 @@ services:
     image: postgres:15
     container_name: superset-db
     restart: unless-stopped
-    env_file:
-      - ./docker/.env
-      - ./docker/.env-local
-    volumes:
-      - superset_db:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U superset"]
-      interval: 5s
-      retries: 5
+  env_file:
+    - ./docker/.env
+    - ./docker/.env-local
+  volumes:
+    - superset_db:/var/lib/postgresql/data
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U superset"]
+    interval: 5s
+    retries: 5
 
   # ------------------------------
   # Redis (Cache / async tasks)
@@ -41,7 +41,10 @@ services:
   # Superset App (Gunicorn)
   # ------------------------------
   superset-app:
-    image: galvanino/linabi-superset:5.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile.linabi
+    image: linabi-superset:5.0.0
     container_name: superset-app
     command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
     restart: unless-stopped
@@ -56,11 +59,12 @@ services:
       - "8088:8088"   # Reverse proxy usará este puerto interno
     environment:
       SUPERSET_LOG_LEVEL: "${SUPERSET_LOG_LEVEL:-info}"
+
   # ------------------------------
   # Celery Worker
   # ------------------------------
   superset-worker:
-    image: galvanino/linabi-superset:5.0.0
+    image: linabi-superset:5.0.0
     container_name: superset-worker
     command: ["/app/docker/docker-bootstrap.sh", "worker"]
     restart: unless-stopped
@@ -78,7 +82,7 @@ services:
   # Celery Beat
   # ------------------------------
   superset-worker-beat:
-    image: galvanino/linabi-superset:5.0.0
+    image: linabi-superset:5.0.0
     container_name: superset-worker-beat
     restart: unless-stopped
     env_file:
@@ -95,13 +99,13 @@ services:
   # Init (db upgrade, create-admin, init)
   # ------------------------------
   superset-init:
-    image: galvanino/linabi-superset:5.0.0
+    image: linabi-superset:5.0.0
     container_name: superset-init
     command: ["/app/docker/docker-init.sh"]
-    env_file:
-      - ./docker/.env
-      - ./docker/.env-local
     depends_on:
+      - superset-db
+      - superset-cache
+    env_file:
       superset-db:
         condition: service_started
       superset-cache:
